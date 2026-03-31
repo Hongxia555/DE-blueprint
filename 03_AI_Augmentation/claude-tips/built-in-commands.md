@@ -2,6 +2,31 @@
 
 A ranked reference of the most useful built-in slash commands that ship with Claude Code.
 
+> **Before adding a custom command:** check this file first. Many useful commands are already built in and don't need to be imported from external sources.
+
+---
+
+## WOW Custom Commands (installed, not built-in)
+
+Commands added to `WOW/.claude/commands/` from [everything-claude-code](https://github.com/Hongxia555/everything-claude-code):
+
+| Command | What it does |
+|---|---|
+| `/learn` / `/learn-eval` | Extract reusable patterns from a session into instincts |
+| `/evolve` | Review and improve accumulated instincts |
+| `/instinct-status` / `/instinct-export` / `/instinct-import` | Manage the instinct learning system |
+| `/skill-create` | Auto-generate skills from git history |
+| `/skill-health` | Portfolio dashboard — see skill gaps |
+| `/rules-distill` | Distill topic principles into a rules file |
+| `/update-docs` | Keep documentation current after study sessions |
+| `/checkpoint` | Mark named progress point mid-task |
+| `/code-review` | Security + quality review of uncommitted changes |
+| `/python-review` | PEP 8, type hints, security, Pythonic idioms |
+| `/prompt-optimize` | Analyze and improve a draft prompt |
+| `/tdd` | Test-driven development workflow |
+| `/harness-audit` | Audit Claude Code config for reliability and cost |
+| `/orchestrate` | Multi-agent orchestration patterns |
+
 ---
 
 ## Core Commands (Daily Drivers)
@@ -11,7 +36,7 @@ A ranked reference of the most useful built-in slash commands that ship with Cla
 | `/model` | Switch between Claude models (Sonnet, Opus, Haiku) mid-session |
 | `/resume` | Continue a previous conversation by ID or name |
 | `/config` | Open settings UI — theme, model, output style, preferences |
-| `/rewind` | Restore code/conversation to a previous state |
+| `/rewind` | Restore code/conversation to a previous state — press `Esc` twice to access the undo menu |
 | `/cost` | Show token usage and spend for the session |
 | `/compact [focus]` | Compress conversation history to free up context window; optionally focus the summary |
 | `/clear` | Reset conversation and free context entirely (aliases: `/reset`, `/new`) |
@@ -62,7 +87,7 @@ These ship with Claude Code and behave like skills (not fixed commands) — they
 |---|---|
 | `/batch <instruction>` | Decomposes a large change into 5–30 independent units, spawns background agents in isolated git worktrees, each opens a PR |
 | `/simplify [focus]` | Reviews recently changed files for quality/efficiency issues; spawns parallel review agents and applies fixes |
-| `/loop [interval] <prompt>` | Runs a prompt repeatedly on an interval — useful for polling deploys, babysitting PRs |
+| `/loop [interval] <prompt>` | Runs a prompt repeatedly on an interval — useful for polling deploys, babysitting PRs (max 3 days) |
 | `/claude-api` | Loads Claude API / Anthropic SDK reference for your language; auto-triggers when code imports `anthropic` or `@anthropic-ai/sdk` |
 | `/commit` | Generates a conventional commit message from the current staged diff |
 | `/standup` | Drafts a standup update (Yesterday / Today / Blockers) from recent git activity |
@@ -110,6 +135,41 @@ Commands in the format `/mcp__<server>__<prompt>` are dynamically discovered fro
 /mcp__slack__post_message
 /mcp__sentry__find_recent_errors
 ```
+
+---
+
+## Practical Workflow Tips
+
+From community usage patterns — high-impact habits:
+
+| Tip | Why |
+|---|---|
+| Run `/context` at session start | Most users are 15–20% through budget before typing a word (CLAUDE.md, skills, MCP tools all cost tokens) |
+| Run `/compact` at ~50% context | Don't wait until 95% — compacting late loses more useful history |
+| Run `/clear` between unrelated tasks | Old context from task A degrades output quality for task B |
+| Use `/plan` before touching unfamiliar code | "5 minutes of planning saves an hour" — maps every step before making changes |
+| Say "ultra think" for hard single tasks | Forces maximum reasoning depth (equivalent to high effort on a single prompt) |
+
+---
+
+## Key Shortcuts
+
+| Shortcut | What it does |
+|---|---|
+| `Shift + Tab` | Cycles between **normal → auto-accept → plan** modes |
+| `Esc` twice | Opens the rewind/undo menu mid-session |
+
+---
+
+## CLI Flags Worth Knowing
+
+| Flag | What it does |
+|---|---|
+| `--dangerously-skip-permissions` | Removes all guardrails — Claude executes end-to-end without approval prompts. Use only in sandboxed/CI environments. |
+| `--model` | Set model at launch (e.g., `--model claude-opus-4-6`) |
+| `--add-dir <path>` | Add extra directory to context at launch |
+| `--allowedTools` | Pre-approve specific tools at launch |
+| `--worktree` | Run Claude in an isolated git worktree |
 
 ---
 

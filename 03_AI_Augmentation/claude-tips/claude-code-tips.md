@@ -73,6 +73,9 @@ Match the tone in @.claude/writing-styles/technical.md for all code docs.
 
 ## Workflow
 
+- Use `#` at the start of a message to instantly append a rule to `CLAUDE.md` — fastest way to capture a project note mid-session without breaking flow (e.g. `# always use uv for Python deps`)
+  - vs `/memory` — opens an interactive editor for curated edits
+  - vs auto-memory — background system that persists user/project context across conversations
 - Save reusable prompts as **skills** (formerly "slash commands") — invoke with `/skill-name` (e.g. `/meeting-notes`, `/prd-review`)
   - **Personal skill** (all projects): `~/.claude/skills/<name>/SKILL.md`
   - **Project skill** (this project only): `.claude/skills/<name>/SKILL.md`
@@ -112,16 +115,98 @@ You are a senior engineering reviewer. When invoked:
 
 ---
 
+## Thinking Modes
+
+Claude offers different levels of reasoning through "thinking" modes — triggering extended internal reasoning before responding. Each level gives Claude progressively more tokens to think with.
+
+### Available Modes
+
+| Phrase to use | Reasoning depth |
+|---|---|
+| `think` | Basic reasoning — lightweight, low overhead |
+| `think more` | Extended reasoning |
+| `think a lot` | Comprehensive reasoning |
+| `think longer` | Extended time reasoning |
+| `ultrathink` | Maximum reasoning capability |
+
+These are natural-language phrases you include in your prompt, not slash commands. Example: *"ultrathink: design the partition strategy for this Spark job."*
+
+### Thinking Mode vs Plan Mode
+
+These solve different types of complexity — use the right tool:
+
+| Feature | Best for | Token cost |
+|---|---|---|
+| **Plan Mode** (`/plan` or `Shift+Tab`) | **Breadth** — map a codebase, preview multi-file changes, understand impact before executing | Low (read-only, no execution) |
+| **Thinking Mode** (e.g. `ultrathink`) | **Depth** — complex logic, hard bugs, algorithm design, architectural decisions | High (scales with mode level) |
+| **Both combined** | Tasks that require broad mapping AND hard reasoning within individual steps | Highest |
+
+### Cost Trade-offs
+
+- `ultrathink` can multiply token usage significantly — use it sparingly
+- Routine tasks (file edits, simple queries): no thinking mode needed
+- Moderately complex problems: `think` or `think more` is usually enough
+- Save `ultrathink` for truly hard cases: deep debugging, algorithm design, breaking architectural decisions
+- Plan Mode is cheap for exploration — use it freely before executing; thinking mode costs tokens every time
+
+### Practical Guidance
+
+| Situation | Recommendation |
+|---|---|
+| Writing a simple function | No thinking mode |
+| Debugging a subtle data pipeline bug | `think more` or `think a lot` |
+| Designing a partition strategy or data model | `ultrathink` |
+| Exploring an unfamiliar codebase | Plan Mode (`/plan`) first |
+| Implementing a major multi-file feature | Plan Mode to map steps → `ultrathink` for the hardest sub-problem |
+| Under token budget pressure | Avoid combining both; pick Plan Mode for exploration, skip thinking |
+
+---
+
 ## Recommended Skills
 
-### Personal skills — `~/.claude/skills/` (all projects)
+### WOW workspace skills — `WOW/.claude/skills/` (all WOW repos)
 
+#### Interview Prep & Analytics
 | Skill | What it does |
 |---|---|
-| `/sql-review` | Review SQL for style, performance, and correctness |
+| `/metric-design` | Design North Star + leading + counter metrics + talk-track |
+| `/metric-breakdown` | Structure a metric-drop investigation: scope → decompose → hypotheses → SQL |
+| `/data-model` | Design a star schema (fact/dim tables, grain, SCD types) |
+| `/sql-review` | Review SQL for correctness, performance, and style |
+
+#### Git & Dev Workflow
+| Skill | What it does |
+|---|---|
 | `/commit` | Generate a commit message from staged diff |
-| `/explain` | Explain a piece of code or concept in plain English |
-| `/standup` | Draft a standup update from recent git activity |
+| `/push` | Push with pre-flight status check |
+| `/ship` | Stage + commit + push in one flow |
+| `/standup` | Draft a standup from recent git activity |
+
+#### Learning & Knowledge Capture *(from everything-claude-code)*
+| Skill | What it does |
+|---|---|
+| `continuous-learning-v2` | Instinct system — captures patterns from sessions with confidence scoring |
+| `mcp-server-patterns` | MCP server design patterns (Node/TS SDK, tools, resources, Zod) |
+
+### WOW workspace commands — `WOW/.claude/commands/`
+
+#### Learning System *(from everything-claude-code)*
+| Command | When to use |
+|---|---|
+| `/learn` | After a DE study session — extracts reusable patterns as instincts |
+| `/learn-eval` | Same as `/learn` but self-evaluates session quality first |
+| `/evolve` | Periodically review and promote instincts |
+| `/instinct-status` | See all learned instincts with confidence scores |
+| `/skill-create` | Auto-generate skills from git history (run on DE-blueprint) |
+| `/skill-health` | Dashboard showing skill coverage and gaps |
+| `/rules-distill` | Distill a topic area (e.g. Spark, dbt) into a rules file |
+
+#### Code Quality *(from everything-claude-code)*
+| Command | When to use |
+|---|---|
+| `/code-review` | Before submitting interview code |
+| `/python-review` | Review Python scripts (PEP 8, type hints, security) |
+| `/prompt-optimize` | Improve a draft prompt before using it |
 
 ### DE project skills — `.claude/skills/` (per project)
 
@@ -133,12 +218,6 @@ You are a senior engineering reviewer. When invoked:
 | `/incident-report` | Structure a data incident/outage post-mortem |
 | `/meeting-notes` | Format a raw transcript into structured notes + action items |
 | `/prd-review` | Review a data requirements doc for completeness and edge cases |
-
-### Interview prep skills — `Job_Search/.claude/skills/`
-
-| Skill | What it does |
-|---|---|
-| `/metric-breakdown` | Given a metric drop, outline the investigation framework |
 
 ---
 
