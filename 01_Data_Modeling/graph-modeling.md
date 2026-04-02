@@ -63,6 +63,14 @@ CREATE TABLE edges (
 - `MAP<STRING, STRING>` — most flexible, any number of key-value pairs. Good for heterogeneous properties.
 - Graph vertex/edge properties are typically stored as `MAP<STRING, STRING>` due to their variability
 
+| | Struct | Array | Map |
+|---|---|---|---|
+| Keys/fields | Fixed, named upfront | No keys, just positions | Dynamic, any string |
+| Length | Fixed (always same fields) | Variable | Variable |
+| Type safety | Strong (each field has its own type) | Medium (all elements same type) | Weak (values all same type) |
+| Best for | Embedding a related object (address, event) | Time-series per entity (active dates, sessions) | Heterogeneous properties (graph vertices/edges) |
+| Query style | `col.field_name` | `ARRAY_CONTAINS`, `UNNEST` | `col['key']` |
+
 ### Additive vs non-additive dimensions (Video 7's most important concept)
 - **Additive dimension**: sub-totals can be summed to grand total
   - Example: age groups — sum of all age groups = total population ✓

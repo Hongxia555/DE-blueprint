@@ -69,10 +69,12 @@ WHERE EXISTS (
 - "If you can build idempotent pipelines you will be a much much better data engineer and I promise that is going to get you a lot more money"
 
 ### What breaks idempotency
-- Using `INSERT INTO` without deduplication → duplicates on re-run
-- Using `NOW()` or `CURRENT_TIMESTAMP` inside pipeline logic → different result each run
-- Reading "today's" data without a fixed date parameter → non-deterministic
-- Fix: always pass the **run date as an explicit parameter**, use `INSERT OVERWRITE`
+
+| Anti-pattern | Why it breaks | Fix |
+|---|---|---|
+| `INSERT INTO` without dedup | Duplicates on re-run | Use `INSERT OVERWRITE` or `MERGE` |
+| `NOW()` / `CURRENT_TIMESTAMP` in logic | Different value each run | Pass run date as explicit parameter |
+| Reading "today's" data without a fixed date | Non-deterministic — re-run on different day = different result | Parameterize: `WHERE ds = {{ run_date }}` |
 
 ### SCD and idempotency connection
 - SCDs track attribute changes over time → if your SCD pipeline isn't idempotent, backfilling corrupts the history
