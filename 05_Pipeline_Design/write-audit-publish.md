@@ -78,6 +78,27 @@ Alerting: <PagerDuty/Slack channel>
 - Downstream pipelines wait for the signal before reading
 - Pros: faster for large-scale pipelines; Cons: more complex, harder to roll back
 
+**Visual flow:**
+```
+WAP:
+[raw] → [staging] → audit → PASS → [production] ← consumers read
+                          → FAIL → alert, stop, production untouched
+
+Signal:
+[raw] → [production] → audit → PASS → signal = 'ready' ← consumers check signal first
+                             → FAIL → signal = 'failed', alert
+                                      (data in production but consumers won't read it)
+```
+
+**Why Facebook used Signal instead of WAP:**
+At petabyte scale, WAP requires writing data twice (staging + production swap). Signal writes once directly to production — the flag is the gate, not a separate table.
+
+**Trade-off in plain terms:**
+- **WAP**: production is always clean. Consumers read the table normally — they don't need to know anything about pipeline internals.
+- **Signal**: production may contain data that isn't "ready" yet. Every consumer must check the signal first, or they risk reading incomplete data.
+
+Use WAP by default. Signal only makes sense when the double-write cost is genuinely prohibitive.
+
 ### Blocking vs Non-blocking quality checks
 - **Blocking check**: serious issue → stop the pipeline, alert, manual investigation required
 - **Non-blocking check**: data weirdness → fire alert, but still publish (don't block SLA)
