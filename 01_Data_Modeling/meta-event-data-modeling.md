@@ -32,6 +32,45 @@ SELECT user_id,
 FROM user_activity_compressed;
 ```
 
+**How it works — reading the binary:**
+```
+Bit position:  5  4  3  2  1  0
+Binary:        1  0  1  1  0  1
+                                ↑ bit 0 = today
+                             ↑ bit 1 = yesterday
+```
+`1` = active, `0` = not active. Read right to left.
+
+Example: `activity_bits = 45` → binary `101101`
+```
+Day 5 ago | Day 4 ago | Day 3 ago | Day 2 ago | Yesterday | Today
+    1     |     0     |     1     |     1     |     0     |   1
+```
+Active on: today, 2 days ago, 3 days ago, 5 days ago → **4 active days**
+
+**Breaking down `(1 << 30) - 1` (the mask):**
+```
+1 << 30        = 1000000000000000000000000000000  (1 followed by 30 zeros)
+(1 << 30) - 1  = 0111111111111111111111111111111  (30 ones = last 30 bit positions)
+```
+AND-ing with this mask zeroes out anything older than 30 days:
+```
+activity_bits:  ...1 1 0 1 1 0 1 0 1 1 0 1
+mask:           ...0 0 1 1 1 1 1 1 1 1 1 1
+result (AND):   ...0 0 0 1 1 0 1 0 1 1 0 1  ← only last 30 days remain
+```
+`BIT_COUNT` then counts the `1`s → active days in last 30.
+
+**Why this matters at scale:**
+
+| Approach | Storage per user | Query cost |
+|---|---|---|
+| One row per day | 365 rows | Full scan |
+| Array of dates | 1 row, array up to 365 | `ARRAY_LENGTH(filter(...))` |
+| Bitset (BIGINT) | **1 row, 8 bytes** | Single CPU op |
+
+Trade-off: you lose exact dates (know *how many*, not *which* days); capped at 64 days with a BIGINT.
+
 ### Kimball Methodology at Scale
 - Still valid at Meta scale, but adapted:
   - Fact tables can be petabytes — partitioning strategy is critical
