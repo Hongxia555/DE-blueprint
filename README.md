@@ -24,9 +24,9 @@
 ### 03 — AI Augmentation
 - [ ] **Context Engineering** (上下文工程) — how to design, structure, and manage context fed to LLMs for reliable, high-quality outputs
 - [ ] **Agentic Validation** (Agentic验证) — techniques for verifying agent outputs, preventing hallucinations, and building trust layers in agentic pipelines
-- [ ] **Agentic Tooling** (Agentic工具化) — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
+- [x] **Agentic Tooling** (Agentic工具化) — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
 - [ ] **Agentic Codebase** (Agentic代码库) — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
-- [ ] **Compound Engineering** (复合式工程) — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
+- [x] **Compound Engineering** (复合式工程) — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
 
 ### 00 — Fundamentals
 - [ ] SQL window functions deep dive
@@ -35,21 +35,21 @@
 
 ### 01 — Data Modeling
 - [ ] Star schema vs Data Vault trade-offs
-- [ ] SCD Type 1 / 2 / 3 implementation patterns
+- [x] SCD Type 1 / 2 / 3 implementation patterns
 - [ ] One Big Table (OBT) pattern and when to use it
 
 ### 02 — Architecture
-- [ ] Medallion architecture (Bronze / Silver / Gold)
+- [x] Medallion architecture (Bronze / Silver / Gold)
 - [ ] Data mesh: domain ownership and data contracts
 - [ ] Lakehouse vs traditional data warehouse
 
 ### 04 — Infrastructure
 - [ ] Airflow vs Dagster vs Prefect comparison
-- [ ] Spark optimization: partitioning, caching, skew handling
+- [x] Spark optimization: partitioning, caching, skew handling
 - [ ] dbt project structure best practices
 
 ### 05 — Pipeline Design
-- [ ] Idempotency and incremental load patterns
+- [x] Idempotency and incremental load patterns
 - [ ] CDC (Change Data Capture) strategies
 - [ ] Schema evolution handling
 
@@ -74,11 +74,38 @@
 ```
 de-blueprint/
 ├── 00_Fundamentals/
+│   └── kpis-experiments.md
 ├── 01_Data_Modeling/
+│   ├── 00_data_modeling_overview.md
+│   ├── cumulative-dimensions.md
+│   ├── graph-modeling.md
+│   ├── meta-event-data-modeling.md
+│   ├── scd-idempotency.md
+│   └── xfn-partner-needs.md
 ├── 02_Architecture/
+│   └── medallion-midas-pattern.md
 ├── 03_AI_Augmentation/
+│   ├── ai-agents-fundamentals.md
+│   ├── ai-agents-management.md
+│   ├── llm-how-it-works.md
+│   ├── llm-model-comparison.md
+│   └── claude-tips/
+│       ├── built-in-commands.md
+│       ├── claude-code-memory.md
+│       └── claude-code-tips.md
 ├── 04_Infrastructure/
+│   ├── kafka-flink-streaming.md
+│   └── spark-iceberg.md
 ├── 05_Pipeline_Design/
+│   ├── meta-funnel-analysis.md
+│   ├── meta-growth-accounting.md
+│   └── write-audit-publish.md
 ├── 06_Data_Quality_Ops/
-└── resources/
+│   ├── data-contracts.md
+│   ├── pipeline-maintenance.md
+│   └── spark-testing.md
+├── Repo Bank/
+│   └── repo-overviews/
+├── dataexpert-bootcamp.md
+└── CLAUDE.md
 ```
