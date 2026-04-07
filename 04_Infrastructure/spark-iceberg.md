@@ -11,6 +11,43 @@
 - Supports ACID transactions, schema evolution, time travel, and partition evolution
 - Preferred over Hive tables for: concurrent writes, safe schema changes, reliable deletes
 
+#### What "open table format" means
+Raw files in a data lake (Parquet, ORC) have no built-in concept of schema, transactions, or history — they're just files. A table format adds a **metadata layer** on top to manage all of that.
+
+"Open" means engine-agnostic: Spark, Trino, Flink, Athena, DuckDB can all read and write the same Iceberg table without going through a vendor. You own the files and metadata.
+
+#### How Iceberg works internally
+```
+S3 bucket/
+├── metadata/
+│   ├── v1.metadata.json   ← schema, partition spec, snapshot history
+│   ├── snap-001.avro      ← snapshot: which files are "current"
+│   └── snap-002.avro      ← next snapshot after a write
+└── data/
+    ├── ds=2024-01-01/file1.parquet
+    └── ds=2024-01-02/file2.parquet
+```
+A **snapshot** is a complete picture of the table at a point in time — a list of which data files are valid. All Iceberg features are built on top of this snapshot mechanism.
+
+#### Key features explained
+
+| Feature | What it means | How Iceberg enables it |
+|---|---|---|
+| **ACID transactions** | A write is fully visible or not at all — no partial states | Write creates a new snapshot atomically; readers see the old snapshot until commit completes |
+| **Time travel** | Query the table as it looked at a past point in time | Point to an old snapshot — `VERSION AS OF 12345` maps to the files valid at that moment |
+| **Schema evolution** | Add, rename, or drop columns without rewriting data files | Old files missing a new column return nulls; Iceberg reconciles via metadata, not file rewrites |
+| **Partition evolution** | Change partitioning strategy without rewriting all data | New partitioning applies to new files only; old files retain their original layout |
+
+**Schema evolution caveat:** safe changes (add nullable column, rename) are allowed; unsafe changes (e.g. string → int type cast) are blocked by Iceberg to protect downstream readers.
+
+#### Why Iceberg beats Hive tables
+Hive tracks partitions via directory scans — it looks at folder structure to determine what data exists. This causes:
+- Concurrent write corruption (two writers creating the same partition)
+- Deletes requiring full partition rewrites
+- Risky schema changes
+
+Iceberg's metadata layer eliminates all of these by making every state change a new snapshot.
+
 ```sql
 -- Create Iceberg table
 CREATE TABLE catalog.db.events (
@@ -33,6 +70,44 @@ SELECT * FROM catalog.db.events TIMESTAMP AS OF '2024-01-01 00:00:00';
 | `spark.memory.storageFraction` | Cache priority within memory | 0.5 |
 | `spark.sql.shuffle.partitions` | Post-shuffle partition count | 200 (default), tune to ~2-4x cores |
 
+#### How Spark divides executor memory
+```
+Total executor memory (spark.executor.memory = 8g)
+│
+├── Reserved memory (~300MB, fixed overhead)
+│
+└── Usable memory (remaining)
+    │
+    ├── Spark managed memory (spark.memory.fraction = 0.6)
+    │   ├── Execution memory  ← shuffles, sorts, joins, aggregations
+    │   └── Storage memory    ← cached DataFrames (.cache())
+    │       (spark.memory.storageFraction = 0.5 of the 0.6)
+    │
+    └── User memory (remaining 0.4) ← Python/Scala objects, UDFs
+```
+Execution and storage share their pool and can borrow from each other — but execution can evict cached data if it needs room, not the other way around.
+
+#### What each config actually does
+- **`spark.executor.memory`** — total RAM per executor. Too low → spill to disk. Too high → fewer executors fit on the node.
+- **`spark.memory.fraction`** — fraction of usable memory Spark manages. The remaining 0.4 is for user-space objects. Lower this if you have heavy UDFs or large Python objects.
+- **`spark.memory.storageFraction`** — within the Spark-managed pool, how much is protected for cache. Higher = cached DataFrames less likely to be evicted by joins/shuffles.
+- **`spark.sql.shuffle.partitions`** — partitions created after a shuffle (join, groupBy). Default 200 is often wrong. Target ~128–256MB per partition — if post-shuffle data is 20GB, aim for ~100–150 partitions.
+
+#### The spill problem
+When execution memory runs out mid-operation, Spark writes intermediate data to local disk and reads it back. This kills performance — it's the main thing memory tuning tries to prevent.
+
+Signs you're spilling: Spark UI → stages tab → non-zero "Spill (disk)" column.
+
+Fixes:
+1. Increase `spark.executor.memory`
+2. Repartition before wide transforms to reduce per-partition size
+3. Use broadcast join if one side is small — avoids the shuffle entirely
+
+#### Mental model
+- **Execution memory** = counter space (active work — chopping, mixing)
+- **Storage memory** = fridge (keeping things ready to reuse)
+- **Spill to disk** = running to the grocery store mid-recipe because you ran out of counter space
+
 ### Join Strategies
 | Strategy | When to Use | Config |
 |----------|------------|--------|
@@ -46,11 +121,78 @@ from pyspark.sql.functions import broadcast
 df_result = large_df.join(broadcast(small_df), "user_id")
 ```
 
+#### Why join strategy matters
+When Spark joins two DataFrames, it has to physically move or compare data across executors. The strategy determines whether the join causes a massive network shuffle or avoids it entirely.
+
+#### Broadcast Join
+One table is small enough to be copied to every executor — no shuffle needed. Each executor joins its partition of the large table against its local copy of the small table.
+
+```python
+from pyspark.sql.functions import broadcast
+result = large_df.join(broadcast(small_df), "user_id")
+```
+- Zero network shuffle for the large table — fastest option
+- Risk: broadcasting a table that's actually large → OOM on executors
+
+#### Sort-Merge Join
+Both tables are shuffled so matching keys land on the same executor, then each partition is sorted and merged. Spark's default for large-large joins.
+
+```
+Table A → shuffle by key → sort → merge
+Table B → shuffle by key → sort → merge
+```
+- Predictable and safe for any size
+- Cost: two full network shuffles — expensive but reliable
+
+#### Shuffle Hash Join
+Shuffles both tables by key like sort-merge, but builds a hash table in memory on the smaller side instead of sorting. Faster than sort-merge when sorting is the bottleneck.
+
+```sql
+SELECT /*+ SHUFFLE_HASH(small_table) */ *
+FROM large_table JOIN small_table ON large_table.id = small_table.id
+```
+- Risk: hash table must fit in memory — spill or OOM if it doesn't
+
+#### Decision tree
+```
+Is one side small (< 10MB)?
+  → Yes: Broadcast join
+  → No: Is the smaller side medium and sort is expensive?
+      → Yes: Shuffle Hash join
+      → No: Sort-Merge join (default)
+```
+
+Spark's Catalyst optimizer picks automatically based on table size statistics. Override with hints when statistics are stale or tables were just written.
+
 ### Partitioning
 - **Too few partitions** → large tasks, OOM, slow
 - **Too many partitions** → scheduler overhead, small file problem
 - Rule of thumb: target 100–200MB per partition
 - Use `repartition(n)` before wide transforms, `coalesce(n)` before writes
+
+#### repartition vs coalesce
+
+**`repartition(n)`** — full shuffle, redistributes data evenly across N partitions across the network. Expensive, but gives balanced partition sizes. Use before wide transforms (joins, groupBy, aggregations) so no single executor gets overwhelmed with skewed data.
+
+```python
+# Redistribute evenly before a heavy groupBy
+df.repartition(200, "country").groupBy("country").agg(...)
+```
+
+**`coalesce(n)`** — no shuffle, merges existing partitions on the same executor. Cheap, but can only reduce partition count. Use before writes to avoid the small files problem without paying shuffle cost.
+
+```python
+# Collapse to fewer files before writing
+df.coalesce(10).write.parquet("s3://bucket/output/")
+```
+
+| | `repartition(n)` | `coalesce(n)` |
+|---|---|---|
+| Shuffle | Yes — full | No |
+| Can increase partitions | Yes | No |
+| Data balance | Even | Uneven (merges local partitions) |
+| Use before | Wide transforms | Writes |
+| Cost | High | Low |
 
 ### UDFs vs. Built-ins
 - **Always prefer built-in Spark functions** — JVM-native, optimized by Catalyst

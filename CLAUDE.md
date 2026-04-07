@@ -17,6 +17,7 @@ This is a personal second brain for Data Engineering — structured Markdown not
 | `04_Infrastructure/` | Spark, Kafka, Airflow, cloud platforms |
 | `05_Pipeline_Design/` | Ingestion, transformation, orchestration, ELT/ETL |
 | `06_Data_Quality_Ops/` | dbt tests, observability, incident response, SLAs |
+| `Resources/` | Learning materials, repo overviews, reference links |
 
 Most directories contain only `.gitkeep` — check before assuming content exists.
 

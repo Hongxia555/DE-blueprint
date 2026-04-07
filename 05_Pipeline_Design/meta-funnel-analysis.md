@@ -88,6 +88,51 @@ WHERE a.step_name = 'click';
 - When interviewer says "rewrite without window function" → this is almost always what they want
 - Zach: "that's what they're usually looking for when they're asking you to write the query again"
 
+### Self-join vs window function trade-offs
+
+Both approaches can solve the same funnel/sequence problems. The choice depends on shape of the problem and scale.
+
+**Self-join**
+```sql
+-- Find users who clicked then purchased within 7 days
+SELECT a.user_id
+FROM fct_funnel_events a
+JOIN fct_funnel_events b
+  ON a.user_id = b.user_id
+  AND b.step_name = 'purchase'
+  AND b.event_ts BETWEEN a.event_ts AND a.event_ts + INTERVAL '7 days'
+WHERE a.step_name = 'click';
+```
+
+**Window function**
+```sql
+SELECT user_id
+FROM (
+  SELECT user_id, step_name, event_ts,
+    LAG(step_name) OVER (PARTITION BY user_id ORDER BY event_ts) AS prev_step,
+    LAG(event_ts)  OVER (PARTITION BY user_id ORDER BY event_ts) AS prev_ts
+  FROM fct_funnel_events
+)
+WHERE step_name = 'purchase'
+  AND prev_step = 'click'
+  AND event_ts <= prev_ts + INTERVAL '7 days';
+```
+
+| Dimension | Self-Join | Window Function |
+|---|---|---|
+| **Flexibility** | High — can match any two non-adjacent steps freely | Lower — compares only adjacent rows by default |
+| **Multi-step funnels** | Gets messy fast (3-step = 3 joins) | Clean — one pass classifies all steps |
+| **Performance** | Expensive — O(n²) per user's events | Efficient — single scan with partition |
+| **Non-adjacent steps** | Natural — `b.event_ts > a.event_ts` catches any future step | Requires chaining LAGs or subqueries |
+| **Time window filtering** | Easy — `BETWEEN` in the JOIN condition | Easy — compare current and lagged timestamp |
+| **Readability** | Intuitive for "step A then step B" queries | Requires understanding of window frame semantics |
+
+**When to pick which:**
+- Self-join: steps are non-adjacent, complex matching conditions, or 2-step funnel where clarity > performance
+- Window function: ordered sequence classification in one pass, large-scale events tables, building aggregation layers
+
+The LAG/self-join equivalence only holds cleanly for **strictly adjacent, ordered rows**. Once you need skips or time windows across arbitrary gaps, the self-join gives more control at the cost of compute.
+
 ### COUNT CASE WHEN — the most underrated SQL pattern
 ```sql
 -- Count multiple conditions in one scan (no UNION needed)
@@ -105,6 +150,44 @@ WHERE ds = '2024-01-01';
 - `GROUPING SETS ((a, b), (a), ())` = group by a+b, then just a, then grand total
 - `ROLLUP(a, b)` = hierarchical rollup (most useful for time-based rollups)
 - Zach: "a way to do multiple aggregations in one query without nasty UNIONs"
+
+Assume a sales table: `(country, product_category, year, month, day, revenue)`
+
+**GROUPING SETS** — explicitly pick exactly which combinations you want:
+```sql
+SELECT country, product_category, SUM(revenue)
+FROM sales
+GROUP BY GROUPING SETS (
+  (country, product_category),  -- subtotal by country + category
+  (country),                    -- subtotal by country only
+  ()                            -- grand total
+);
+```
+Equivalent to three queries UNIONed together — you control exactly what appears.
+
+**ROLLUP** — hierarchical collapse from left to right, best for time or geography:
+```sql
+SELECT year, month, day, SUM(revenue)
+FROM sales
+GROUP BY ROLLUP(year, month, day);
+-- Produces: (year, month, day), (year, month), (year), ()
+```
+Always goes from most granular to grand total automatically.
+
+**CUBE** — every possible combination, useful for exploratory dashboards:
+```sql
+SELECT country, product_category, SUM(revenue)
+FROM sales
+GROUP BY CUBE(country, product_category);
+-- Produces: (country, product_category), (country), (product_category), ()
+```
+With N dimensions, CUBE generates 2^N groupings — gets expensive fast.
+
+| | Controls combinations | Use when |
+|---|---|---|
+| `GROUPING SETS` | You pick exactly | You know which aggregations you need |
+| `ROLLUP` | Hierarchical collapse | Time/geo drilldowns |
+| `CUBE` | All combinations | Exploration, small dimension count |
 
 ### EXPLAIN keyword — Zach's recommendation for SQL mastery
 - Run `EXPLAIN <your query>` to see the abstract syntax tree / query plan

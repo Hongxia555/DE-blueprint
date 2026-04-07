@@ -76,6 +76,33 @@ def assert_schema(df, expected_schema):
 
 ---
 
+## Spark Testing vs Pipeline Testing
+
+They are not replaceable — they operate at different layers and catch different types of problems.
+
+**Spark Testing** focuses on transformation logic — does your code produce the right output given certain inputs? It's a software engineering concern.
+- Tests individual functions and UDFs in isolation with synthetic data
+- Runs in CI/CD before any code reaches production
+- Catches: wrong join logic, bad aggregations, schema drift, silent calculation bugs
+
+**Pipeline Testing** (WAP, dbt tests, data quality checks) focuses on data correctness in production — is the data that actually landed in your table valid? It's a data quality concern.
+- Tests output data against expectations (row counts, nulls, ranges, referential integrity)
+- Runs against real data after a pipeline executes
+- Catches: upstream source issues, unexpected real-world events, volume anomalies, value drift
+
+| | Spark Testing | Pipeline Testing |
+|---|---|---|
+| **What it tests** | Transformation code logic | Output data quality |
+| **When it runs** | Before deploy (CI/CD) | After pipeline executes |
+| **Data used** | Synthetic / fake | Real production data |
+| **Catches** | Code bugs, schema drift | Source issues, anomalies, real-world events |
+| **Speed** | Fast (local Spark) | Slower (full pipeline run) |
+| **Layer** | Code layer | Data layer |
+
+They're complementary: Spark tests can't catch an upstream source sending 30% fewer rows — there's no real data to test against. Pipeline tests can't catch a logic bug in your `CASE WHEN` — by the time data lands, the damage is done. Spark tests are the first line of defense at the dev layer; pipeline tests are the safety net at the data layer.
+
+---
+
 ## Interview Angles
 - How do you test a Spark job that reads from S3? → Mock the read with `spark.createDataFrame()`; test only transformation logic in unit tests
 - How do you catch schema drift before it breaks production? → Schema validation step in CI; compare against registered schema in a catalog

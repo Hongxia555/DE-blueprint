@@ -48,6 +48,21 @@ Every production pipeline should have a runbook:
 - On-call DE → #data-incidents Slack → Source team lead
 ```
 
+### Runbook vs Data Contract
+
+| | Runbook | Data Contract |
+|---|---|---|
+| **Audience** | DE team (internal) | Producer + consumer (external) |
+| **Purpose** | How to recover from failures | What downstream can depend on |
+| **Triggered by** | Incidents | Onboarding a new consumer |
+| **Owner** | Pipeline owner | Agreed between teams |
+| **Changes when** | Failure patterns change | Schema or semantics change |
+
+- **Runbook** — operational guide for when things go wrong; answers *"the pipeline is broken at 3am, what do I do?"*
+- **Data Contract** — agreement on what the data will look like; answers *"what can downstream teams rely on?"* — covers schema, SLA, field semantics, and how breaking changes are communicated
+
+A runbook helps you fix the pipeline. A data contract defines what you're responsible for not breaking in the first place.
+
 ### On-Call Best Practices
 - Rotate on-call weekly (no permanent on-call)
 - Track every incident in a postmortem doc

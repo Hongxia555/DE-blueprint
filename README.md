@@ -15,7 +15,7 @@
 | 04 | [Infrastructure](./04_Infrastructure/) | Cloud platforms, Spark, Kafka, Airflow, containerization, IaC |
 | 05 | [Pipeline Design](./05_Pipeline_Design/) | Ingestion, transformation, orchestration patterns, ELT/ETL best practices |
 | 06 | [Data Quality & Ops](./06_Data_Quality_Ops/) | Testing, observability, SLAs, incident response, dbt tests, Great Expectations |
-| — | [Resources](./resources/) | Books, courses, cheat sheets, interview prep |
+| — | [Resources](./Resources/) | Learning materials, repo overviews, reference links |
 
 ---
 
@@ -64,7 +64,7 @@
 
 - Each folder contains topic-specific notes, diagrams, and code snippets
 - Files are prefixed with numbers for ordering (e.g., `01_star_schema.md`)
-- Use the `resources/` folder for reference materials and external links
+- Use the `Resources/` folder for learning materials, repo overviews, and reference links
 - Check off items in **Topics to Explore** as you write notes on them
 
 ---
@@ -104,7 +104,7 @@ de-blueprint/
 │   ├── data-contracts.md
 │   ├── pipeline-maintenance.md
 │   └── spark-testing.md
-├── Repo Bank/
+├── Resources/
 │   └── repo-overviews/
 ├── dataexpert-bootcamp.md
 └── CLAUDE.md
