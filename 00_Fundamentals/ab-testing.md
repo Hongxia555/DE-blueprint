@@ -96,37 +96,176 @@ Textbooks assume you run the test once and check the result at the end. In pract
 ### Advanced Technique 1: CUPED — Variance Reduction (5x Speedup)
 **CUPED** (Controlled-experiment Using Pre-Experiment Data) reduces the variance of your metric by incorporating pre-experiment data.
 
-Core idea: much of the variance in a metric is explained by the user's *pre-experiment* behavior. Remove that explained variance → smaller confidence intervals → detect effects faster.
+#### The Core Intuition
+Users have very different spending or engagement histories before the experiment even starts. A high-spender will naturally spend more than a low-spender — that difference has nothing to do with your treatment. It's just noise that makes it harder to detect the real effect.
 
+CUPED's insight: **"I already expect Alice to spend more than Bob based on history. So when measuring the treatment effect, I'll subtract out what I already expected and only look at what's surprising."**
+
+The question CUPED answers is not "how much did each user spend?" but:
+> **"Did the treatment cause a change BEYOND what history already predicted?"**
+
+CUPED doesn't eliminate the historical difference between users — it removes its *influence* on the experiment result. The treatment effect estimate stays the same; what shrinks is the uncertainty around it.
+
+#### The Math
 ```
 Y_adjusted = Y - θ × X_pre
 
 Where:
-  Y     = post-experiment metric (e.g. revenue during experiment)
-  X_pre = same metric measured before experiment started
-  θ     = covariance(Y, X_pre) / variance(X_pre)
+  Y         = metric during experiment (e.g. revenue this week)
+  X_pre     = same metric before experiment (e.g. revenue last week)
+  θ         = Cov(Y, X_pre) / Var(X_pre)   ← how strongly past predicts future
 ```
+
+The variance reduction is:
+```
+Var(Y_adjusted) = Var(Y) × (1 - ρ²)
+
+ρ = correlation between Y and X_pre
+```
+If ρ = 0.8 (strong correlation): variance drops to 36% of original → **~3x fewer users needed**.
+
+#### Concrete Example (θ = 0.7)
+| User | Pre-exp revenue | Experiment revenue | Expected (θ × pre) | Adjusted (surprise) |
+|---|---|---|---|---|
+| Alice | $100 | $110 | $70 | **$40** |
+| Bob | $10 | $20 | $7 | **$13** |
+| Carol | $50 | $55 | $35 | **$20** |
+
+Alice's raw $110 looks wildly different from Bob's $20 — that spread is noise. After adjustment, the values are much closer together. The treatment effect is the same, but the variance is smaller → tighter confidence intervals → significance reached faster.
+
+#### What CUPED Is NOT
+- It doesn't change randomization or experiment design
+- It doesn't fix bias — broken assignment means CUPED still fails
+- It has no effect if past behavior doesn't predict future behavior (ρ ≈ 0)
+- It's a post-processing step applied at analysis time, not during the experiment
 
 Result: **same statistical power with ~5x fewer users**, or equivalently, reach significance much faster with the same user base. This is one of the highest-leverage techniques for teams that are sample-size constrained.
 
 ### Advanced Technique 2: Bayesian vs Frequentist
+
+#### The Fundamental Difference in Mindset
+
+**Frequentist asks:** "Assuming the treatment has zero effect, how likely is it that I'd see data this extreme by chance?" → Output: p-value
+
+**Bayesian asks:** "Given the data I've seen, what's the probability that treatment is actually better than control?" → Output: a probability distribution
+
+#### Frequentist in Plain English
+Set up a null hypothesis (treatment = control), collect data, compute a p-value.
+- p-value = 0.03 means: "If there were truly no effect, there's only a 3% chance of seeing results this extreme"
+- If p < 0.05, reject the null and call it significant
+
+**The common trap:** p-value does NOT mean "97% chance the treatment works." It's a statement about the data given the null — not about the null given the data.
+
+#### Bayesian in Plain English
+Start with a **prior belief** about the effect size (e.g. "most features move revenue by 0–5%"). As data comes in, update that belief to get a **posterior distribution**:
+
+```
+Posterior = Prior × Likelihood of data
+
+"What I believe after seeing data" = "What I believed before" × "How well data fits"
+```
+
+Output: "There is an 89% probability that treatment is better than control." — a direct, intuitive answer that decision-makers actually understand.
+
+#### The Peeking Problem — Where the Difference Really Matters
+**Frequentist + peeking = inflated false positives.** If you check p-values daily and stop as soon as p < 0.05, your real false positive rate is far higher than 5%. The test was designed to be checked once at the end.
+
+**Bayesian naturally handles peeking.** You're continuously updating a probability distribution, so you can check at any time. The posterior probability at day 3 is a valid statement — no fixed end date required.
+
+#### Side-by-Side Comparison
 | | Frequentist | Bayesian |
 |---|---|---|
-| Output | p-value, confidence interval | Posterior probability distribution |
-| Interpretation | "If null is true, probability of seeing this data" | "Probability that treatment is better" |
-| Peeking problem | Severe — invalidates results | Naturally handles it |
-| Prior knowledge | Ignored | Incorporated via prior |
-| Industry use | Default (A/A tests, guardrails) | Useful for multi-armed bandits, faster decisions |
+| Question answered | "Is this result unlikely under the null?" | "How probable is it that treatment wins?" |
+| Output | p-value, confidence interval | Posterior probability, credible interval |
+| Interpretation | Hard to explain to non-statisticians | Intuitive — direct probability |
+| Peeking | Breaks the test | Naturally valid |
+| Prior knowledge | Ignored | Incorporated — helpful or dangerous |
+| Sample size | Must be fixed in advance | Flexible |
+| Industry use | Default for guardrails, A/A tests | Multi-armed bandits, faster ship decisions |
 
-**What you actually need to care about:** Neither approach saves you from bad metric design or logging errors. The choice matters less than experiment hygiene.
+#### When Each Wins
+**Use Frequentist when:**
+- You need a hard, defensible threshold ("only ship if p < 0.05")
+- Running A/A tests to validate your experiment platform
+- Checking guardrail metrics — you want a fixed false positive rate guarantee
+
+**Use Bayesian when:**
+- You want to stop early as soon as you have enough confidence
+- Running multi-armed bandits — continuously reallocating traffic to the winning variant
+- Communicating to non-technical stakeholders ("87% chance this works" vs "p = 0.04")
+- You have strong, reliable prior knowledge to incorporate
+
+**What you actually need to care about:** Neither approach saves you from bad metric design or logging errors. The choice matters less than experiment hygiene — correct exposure logging, stable metric definitions, and not changing decision criteria mid-experiment.
 
 ### Advanced Technique 3: Sequential Testing — Fighting the Peeking Problem
-Sequential testing (序贯检验) systematically accounts for repeated looks at the data:
-- The valid stopping boundary is **wider early** and narrows over time
-- You "pay a cost" for each peek — the threshold for significance is higher
-- Result: you can look at results anytime and still maintain the correct false positive rate
 
-This makes daily dashboards statistically valid. Without it, daily monitoring silently inflates your error rate.
+#### The Problem
+In a standard Frequentist test, you fix your sample size upfront and check the result **once** at the end. But in reality, everyone peeks at the dashboard daily. Here's what that does to your false positive rate:
+
+| Number of peeks | Actual false positive rate (intended 5%) |
+|---|---|
+| 1 | 5% |
+| 5 | ~14% |
+| 10 | ~19% |
+| 20 | ~25% |
+
+You set α = 0.05 but you're actually running at 25% false positives — shipping bad features 1 in 4 times.
+
+#### Does Passive Peeking (No Decision) Still Cause Problems?
+Yes — **peeking inflates false positives even if you make no decision and change nothing.**
+
+The problem operates on two levels:
+
+**Layer 1: Conscious bias** — You peek on day 5, see p = 0.06, decide to wait. You peek on day 8, see p = 0.04, and stop. You've run multiple tests and stopped at the favorable one — even though you told yourself you weren't deciding yet.
+
+**Layer 2: The math doesn't care about your intentions** — Even if you genuinely wait until day 28, if you would have stopped early had you seen p < 0.05, you've implicitly changed your stopping rule. The test is no longer the fixed-horizon test you designed.
+
+**The one case where peeking is truly harmless:** checking purely for operational issues — bugs, logging failures, catastrophic regressions — with a strict rule that you will only stop for those reasons, not for statistical significance. Running guardrail checks daily (is revenue crashing? are errors spiking?) while only looking at the primary metric once at the end is a valid pattern.
+
+#### Do You Need Sequential Testing?
+| Situation | Need sequential testing? |
+|---|---|
+| You peek and would stop early if p < 0.05 | Yes |
+| You peek but only check for crashes/bugs | No — but be honest with yourself |
+| You want to stop early when effect is clear | Yes |
+| You truly wait until the planned end date | No — standard Frequentist is fine |
+
+For most teams: **yes**. Daily dashboards make peeking structural, not just personal — the temptation to act on what you see is nearly impossible to resist.
+
+#### How Sequential Testing Works
+Sequential testing (序贯检验) systematically accounts for repeated looks at the data by **raising the bar for significance early and lowering it as more data accumulates**. Every peek "spends" some of your α budget — early peeks cost more because you have less data and more uncertainty.
+
+```
+High significance threshold (hard to reach)
+│
+│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+│                                 ← boundary narrows over time
+│         ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+│                  ─ ─ ─ ─ ─ ─ ─
+│                          ─ ─ ─  ← converges to ~α=0.05 at end
+└─────────────────────────────────────────────────
+Day 1    Day 7    Day 14   Day 21   Day 28
+```
+
+- **Day 1:** You'd need an enormous effect to call it significant
+- **Day 28:** The boundary has dropped to roughly the standard threshold
+- This also protects against novelty effect — a feature that looks great on day 2 won't cross the boundary until the effect is stable
+
+#### The Two Boundaries
+Sequential testing is two-sided:
+- **Upper boundary** — declare treatment a winner early
+- **Lower boundary** — declare it a loser early (stop for futility)
+
+Stopping for futility is just as important — if the effect is clearly zero or negative by day 10, there's no point running for 28 more days and wasting the experiment slot.
+
+#### The Connection to CUPED
+CUPED and sequential testing work well together:
+- **CUPED** reduces variance → the experiment reaches the boundary faster
+- **Sequential testing** lets you stop as soon as the boundary is crossed
+
+Together they can cut experiment runtime from 4 weeks to 1 week.
+
+This makes daily dashboards statistically valid. Without sequential testing, daily monitoring silently inflates your error rate.
 
 ---
 
