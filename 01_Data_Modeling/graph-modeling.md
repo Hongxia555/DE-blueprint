@@ -42,6 +42,153 @@ CREATE TABLE edges (
 
 ---
 
+## When to Pick Graph Modeling
+
+The core question: **"Is the relationship itself what I care about — not just the entities?"**
+
+If yes → graph model. If you care about aggregating attributes on entities → star schema.
+
+### Question Types That Signal Graph Modeling
+
+1. **"Who knows whom / how far apart are they?"**
+   - *"Is this user 2 hops away from a known fraudster?"*
+   - *"What's the shortest connection between User A and User B?"*
+   - Star schema can't answer this — it has no concept of traversal.
+
+2. **"What clusters/communities exist?"**
+   - *"Which groups of accounts are behaving similarly?"* (fraud rings)
+   - *"Which pages does this user's social circle engage with?"*
+
+3. **"What influenced what?"** (lineage / causality chains)
+   - *"Which upstream table failures caused this downstream dashboard to break?"* (data lineage)
+   - *"How did this content go viral — who shared it to whom?"*
+
+4. **"What are users similar to each other based on shared connections?"**
+   - *"Recommend friends because User A and User C both follow User B"* (collaborative filtering via graph)
+   - Instagram Explore's retrieval stage does this — shared-follow graph to find candidate content.
+
+5. **"What paths exist?"** (recommendation / traversal)
+   - *"Users who bought X also tend to buy Y — find the purchase chain"*
+
+### Quick Decision Rule
+
+| Situation | Model |
+|---|---|
+| "How many users did X per day?" | Star schema (fact table) |
+| "Which users are connected to fraudsters within 3 hops?" | Graph |
+| "Total revenue by region?" | Star schema |
+| "Did this account cluster form recently?" | Graph |
+| "Who influenced whom in this viral post?" | Graph |
+
+---
+
+## Meta Case Study: Graph Modeling in Practice
+
+Meta's entire product is a graph. Every meaningful question they ask is a relationship question.
+
+### The Core Graph Structure
+
+```
+Users ──FRIENDS_WITH──► Users
+Users ──LIKES──────────► Posts
+Users ──MEMBER_OF──────► Groups
+Posts ──TAGGED_IN──────► Users
+Users ──FOLLOWS────────► Pages
+```
+
+Vertices: `users`, `posts`, `groups`, `pages`. Edges: the actions between them.
+
+### Example Schema (Generic Vertex/Edge)
+
+```sql
+-- Vertices
+INSERT INTO vertices VALUES
+  ('user_123', 'USER', MAP('name', 'Alice', 'city', 'NYC')),
+  ('user_456', 'USER', MAP('name', 'Bob',   'city', 'LA')),
+  ('page_789', 'PAGE', MAP('name', 'NBA',   'category', 'Sports'));
+
+-- Edges
+INSERT INTO edges VALUES
+  ('user_123', 'USER', 'user_456', 'USER', 'FRIENDS_WITH', MAP('since', '2022-01-01')),
+  ('user_123', 'USER', 'page_789', 'PAGE', 'FOLLOWS',      MAP('notif', 'true')),
+  ('user_456', 'USER', 'page_789', 'PAGE', 'FOLLOWS',      MAP('notif', 'false'));
+```
+
+### Use Case 1: "People You May Know" (PYMK)
+
+**Question:** *Which users should we suggest as friends to User A?*
+
+Logic: find 2nd-degree connections (friends of friends) and rank by mutual friend count.
+
+```
+User A → friends → [User B, User C, User D]
+User B → friends → [User E, User F]
+User C → friends → [User E, User G]
+User D → friends → [User E, User I]
+
+Mutual count: User E = 3 → top recommendation
+```
+
+```sql
+SELECT
+  e2.object_identifier AS suggested_friend,
+  COUNT(*) AS mutual_friends
+FROM edges e1
+JOIN edges e2
+  ON e1.object_identifier = e2.subject_identifier
+  AND e2.edge_type = 'FRIENDS_WITH'
+WHERE e1.subject_identifier = 'user_123'
+  AND e1.edge_type = 'FRIENDS_WITH'
+  AND e2.object_identifier != 'user_123'
+  AND e2.object_identifier NOT IN (
+    SELECT object_identifier FROM edges
+    WHERE subject_identifier = 'user_123'
+      AND edge_type = 'FRIENDS_WITH'
+  )
+GROUP BY suggested_friend
+ORDER BY mutual_friends DESC;
+```
+
+This is a 2-hop traversal — impossible to express cleanly in a star schema without expensive self-joins.
+
+### Use Case 2: Fake Account Detection (Integrity)
+
+**Question:** *Is this new account part of a coordinated fake network?*
+
+Graph red flags that a star schema can't surface:
+- 500 accounts all created the same week
+- All LIKE the same 20 Pages
+- All FRIENDS_WITH each other but nobody outside the cluster
+- Zero mutual friends with legitimate users
+
+A star schema shows "500 accounts liked Page X" — looks normal. Only the **graph topology** (cluster isolated from real social graph) reveals the fraud ring.
+
+### Use Case 3: Feed Content Recommendations
+
+**Question:** *What should we show User A in their Feed?*
+
+2-hop logic: *"What are User A's friends engaging with?"*
+
+```
+User A → FRIENDS_WITH → [User B, User C]
+User B → LIKED → [Post 101, Post 202]
+User C → LIKED → [Post 202, Post 303]
+
+Post 202 has 2 signals → boost for User A
+```
+
+### Why Not Star Schema for These?
+
+| Question | Star Schema Problem |
+|---|---|
+| PYMK | Multi-level self-joins explode at billions-of-edges scale |
+| Fraud ring detection | Can detect time clusters, but misses topological isolation |
+| Viral content path | Recursive CTEs possible but slow; no native traversal |
+
+Graph databases (Neo4j, Neptune) or graph processing engines (GraphX, GraphFrames on Spark) use **index-free adjacency** — each node directly points to its neighbors in memory, making hops O(1) instead of O(log n) per join.
+
+---
+
 ## Interview Angles
 - When would you model data as a graph vs. star schema? → Graph when relationships are the query target; star schema when aggregations on attributes dominate
 - How does Meta use graph modeling for integrity? → Detect fake accounts via network clustering
