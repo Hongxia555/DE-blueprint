@@ -29,9 +29,9 @@
 - [x] **Compound Engineering** (复合式工程) — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
 
 ### 00 — Fundamentals
-- [ ] SQL window functions deep dive
-- [ ] Python for DE: generators, async, type hints
-- [ ] Distributed systems: CAP theorem, consistency models
+- [x] SQL window functions deep dive
+- [x] Python for DE: generators, async, type hints
+- [x] Distributed systems: CAP theorem, consistency models
 
 ### 01 — Data Modeling
 - [ ] Star schema vs Data Vault trade-offs
@@ -46,12 +46,14 @@
 ### 04 — Infrastructure
 - [ ] Airflow vs Dagster vs Prefect comparison
 - [x] Spark optimization: partitioning, caching, skew handling
-- [ ] dbt project structure best practices
+- [x] dbt project structure best practices
 
 ### 05 — Pipeline Design
 - [x] Idempotency and incremental load patterns
 - [ ] CDC (Change Data Capture) strategies
 - [ ] Schema evolution handling
+- [x] PySpark end-to-end pipeline (Medallion, Delta Lake, Pydantic validation)
+- [x] dbt testing and materialization patterns
 
 ### 06 — Data Quality & Ops
 - [ ] dbt test coverage strategy
@@ -74,12 +76,14 @@
 ```
 de-blueprint/
 ├── 00_Fundamentals/
+│   ├── DE_concepts.md          ← core DE concepts: schema design, ETL/ELT, distributed systems, data quality
+│   ├── database_types.md       ← relational vs columnar, SQL vs NoSQL, CAP theorem, decision guide
+│   ├── ab-testing.md
 │   └── kpis-experiments.md
 ├── 01_Data_Modeling/
 │   ├── 00_data_modeling_overview.md
 │   ├── cumulative-dimensions.md
 │   ├── graph-modeling.md
-│   ├── meta-event-data-modeling.md
 │   ├── scd-idempotency.md
 │   └── xfn-partner-needs.md
 ├── 02_Architecture/
@@ -97,8 +101,14 @@ de-blueprint/
 │   ├── kafka-flink-streaming.md
 │   └── spark-iceberg.md
 ├── 05_Pipeline_Design/
-│   ├── meta-funnel-analysis.md
-│   ├── meta-growth-accounting.md
+│   ├── dbt/
+│   │   ├── dbt-and-testing.md          ← dbt test types, materialization, source freshness
+│   │   ├── dbt-example-ecommerce.md    ← full e-commerce pipeline (staging → mart)
+│   │   └── dbt-faq.md                  ← dbt Q&A reference
+│   ├── pyspark/
+│   │   ├── pyspark-overview.md         ← PySpark concepts, Delta Lake, transformations vs actions
+│   │   ├── pyspark-example-pipeline.md ← end-to-end Medallion pipeline with Pydantic + Delta
+│   │   └── pyspark-faq.md              ← PySpark Q&A reference
 │   └── write-audit-publish.md
 ├── 06_Data_Quality_Ops/
 │   ├── data-contracts.md
@@ -106,6 +116,5 @@ de-blueprint/
 │   └── spark-testing.md
 ├── Resources/
 │   └── repo-overviews/
-├── dataexpert-bootcamp.md
 └── CLAUDE.md
 ```

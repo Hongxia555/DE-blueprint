@@ -8,24 +8,21 @@ This is a personal second brain for Data Engineering — structured Markdown not
 
 ## Topic Areas
 
-| Folder | Focus |
-|---|---|
-| `00_Fundamentals/` | SQL, Python, distributed systems, CS foundations |
-| `01_Data_Modeling/` | Dimensional modeling, Data Vault, SCD types, schema design |
-| `02_Architecture/` | Lambda/Kappa, Medallion, data mesh, lakehouse |
-| `03_AI_Augmentation/` | LLM integration, Claude Code workflows, agentic tooling |
-| `04_Infrastructure/` | Spark, Kafka, Airflow, cloud platforms |
-| `05_Pipeline_Design/` | Ingestion, transformation, orchestration, ELT/ETL |
-| `06_Data_Quality_Ops/` | dbt tests, observability, incident response, SLAs |
-| `Resources/` | Learning materials, repo overviews, reference links |
-
-Most directories contain only `.gitkeep` — check before assuming content exists.
+| Folder | Focus | Key Files |
+|---|---|---|
+| `00_Fundamentals/` | SQL, Python, distributed systems, CS foundations | `DE_concepts.md`, `database_types.md` |
+| `01_Data_Modeling/` | Dimensional modeling, Data Vault, SCD types, schema design | `scd-idempotency.md`, `cumulative-dimensions.md` |
+| `02_Architecture/` | Lambda/Kappa, Medallion, data mesh, lakehouse | `medallion-midas-pattern.md` |
+| `03_AI_Augmentation/` | LLM integration, Claude Code workflows, agentic tooling | `ai-agents-fundamentals.md`, `claude-tips/` |
+| `04_Infrastructure/` | Spark, Kafka, Airflow, cloud platforms | `kafka-flink-streaming.md`, `spark-iceberg.md` |
+| `05_Pipeline_Design/` | Ingestion, transformation, orchestration, ELT/ETL | `dbt/`, `pyspark/`, `write-audit-publish.md` |
+| `06_Data_Quality_Ops/` | dbt tests, observability, incident response, SLAs | `data-contracts.md`, `spark-testing.md` |
+| `Resources/` | Learning materials, repo overviews, reference links | `reading-list.md`, `repo-overviews/` |
 
 ## Note Conventions
 
 - All notes are Markdown. Use clear headers, bullets, and fenced SQL/code blocks.
 - Fact tables use `fct_` prefix; dimensions use `dim_` prefix.
-- Interview prep structure: Business context → North Star metrics → Data model → Sample SQL → Metric investigation frameworks.
 - Files prefixed with numbers indicate ordering (e.g. `00_data_modeling_overview.md`).
 
 ## Skills (repo-scoped)
