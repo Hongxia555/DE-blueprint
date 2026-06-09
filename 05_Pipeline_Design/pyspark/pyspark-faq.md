@@ -580,4 +580,42 @@ Never call `.toPandas()` on a large DataFrame — it pulls all data to the drive
 
 ---
 
+**Job is slow** — check these in order:
+1. `spark.sql.shuffle.partitions` — default 200, may be wrong for your data size
+2. Skew — one partition has 10× more data than others, one task runs forever while others finish
+3. Missing broadcast join — shuffling a large table when you could copy a small one to every executor
+4. Missing cache — recomputing the same expensive DataFrame multiple times
+
+---
+
+**Out of memory on driver** — the driver is one machine. `.toPandas()` and `.collect()` pull ALL data off the cluster into that one machine's RAM. 100M rows × 10 columns = crash. Only call these on small, already-aggregated results.
+
+---
+
+**Out of memory on executor** — workers are running out of RAM mid-task. Too few partitions → each partition is too large to fit in memory. More partitions = smaller chunks per task = each executor handles less at once.
+
+---
+
+**Small files on S3** — 500 partitions → 500 tiny files. Every downstream read opens 500 S3 API calls and 500 Spark tasks — slow and expensive. `coalesce(10)` before writing merges partitions without a full shuffle. Delta's `OPTIMIZE` compacts existing small files retroactively.
+
+---
+
+**Skewed join** — one join key has far more rows than others (e.g. `user_id = NULL` matches 80% of rows). That one partition takes 45 minutes while all others finish in 2 minutes. Two fixes:
+- **Broadcast the small side** — no shuffle at all, skew becomes irrelevant
+- **Salt the key** — add a random suffix to split the hot key across multiple partitions, then aggregate after
+
+---
+
+**Repeated computation** — Spark is lazy, so every action re-runs the full lineage from scratch. If you use the same DataFrame in two places (a count check + a write, or two pipeline branches), Spark computes it twice. `.cache()` after the expensive step stores the result so the second use is free.
+
+---
+
+**UDF is slow** — Spark workers run on the JVM (Java). A UDF forces Spark to serialize each row to Python, call your function, serialize back to JVM — for every single row. On 100M rows that's 100M round trips. Built-in `F.*` functions run entirely in the JVM with no serialization cost.
+
+---
+
+**Schema changed upstream** — `mergeSchema=false` at Bronze = strict guard. If a new column appears in the source, the write fails loudly — you catch the change immediately. `mergeSchema=true` at Silver = permissive. New columns are added automatically without breaking the pipeline. Bronze should be strict (catch surprises early); Silver can be flexible (absorb additive changes).
+
+---
+
 *Sources: DataCamp PySpark Interview Questions (2026) · Analytics Vidhya PySpark Interview Q&A (2026)*
