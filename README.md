@@ -24,39 +24,28 @@
 ### 03 — AI Augmentation
 - [ ] **Context Engineering** — how to design, structure, and manage context fed to LLMs for reliable, high-quality outputs
 - [ ] **Agentic Validation** — techniques for verifying agent outputs, preventing hallucinations, and building trust layers in agentic pipelines
-- [x] **Agentic Tooling** — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
 - [ ] **Agentic Codebase** — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
-- [x] **Compound Engineering** — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
 - [ ] **Agentic Memory — Unified Cross-Harness** — decoupling memory from any single AI tool (Claude Code, Cursor, Codex) using lifecycle hooks; three-layer architecture: hooks (deterministic logging) → dream phase (offline distillation into semantic markdown) → injection (context retrieval at session start)
 - [ ] **Agentic Memory — Five Memory Types** — context-resident compression, retrieval-augmented stores, reflective self-improvement, hierarchical virtual context, policy-learned management (store/retrieve/update/summarize/discard as agent-callable tools)
 - [ ] **Memory as Production Engineering** — benchmarking agent memory, measuring accuracy gains from accumulated context (2.5% → 50%+ on enterprise data tasks), and operational patterns for memory lifecycle management
 
 ### 00 — Fundamentals
-- [x] SQL window functions deep dive
-- [x] Python for DE: generators, async, type hints
-- [x] Distributed systems: CAP theorem, consistency models
+- [ ] (nothing remaining)
 
 ### 01 — Data Modeling
 - [ ] Star schema vs Data Vault trade-offs
-- [x] SCD Type 1 / 2 / 3 implementation patterns
 - [ ] One Big Table (OBT) pattern and when to use it
 
 ### 02 — Architecture
-- [x] Medallion architecture (Bronze / Silver / Gold)
 - [ ] Data mesh: domain ownership and data contracts
 - [ ] Lakehouse vs traditional data warehouse
 
 ### 04 — Infrastructure
 - [ ] Airflow vs Dagster vs Prefect comparison
-- [x] Spark optimization: partitioning, caching, skew handling
-- [x] dbt project structure best practices
 
 ### 05 — Pipeline Design
-- [x] Idempotency and incremental load patterns
 - [ ] CDC (Change Data Capture) strategies
 - [ ] Schema evolution handling
-- [x] PySpark end-to-end pipeline (Medallion, Delta Lake, Pydantic validation)
-- [x] dbt testing and materialization patterns
 
 ### 06 — Data Quality & Ops
 - [ ] dbt test coverage strategy
