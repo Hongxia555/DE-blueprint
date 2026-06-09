@@ -22,11 +22,11 @@
 ## Topics to Explore
 
 ### 03 — AI Augmentation
-- [ ] **Context Engineering** (上下文工程) — how to design, structure, and manage context fed to LLMs for reliable, high-quality outputs
-- [ ] **Agentic Validation** (Agentic验证) — techniques for verifying agent outputs, preventing hallucinations, and building trust layers in agentic pipelines
-- [x] **Agentic Tooling** (Agentic工具化) — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
-- [ ] **Agentic Codebase** (Agentic代码库) — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
-- [x] **Compound Engineering** (复合式工程) — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
+- [ ] **Context Engineering** — how to design, structure, and manage context fed to LLMs for reliable, high-quality outputs
+- [ ] **Agentic Validation** — techniques for verifying agent outputs, preventing hallucinations, and building trust layers in agentic pipelines
+- [x] **Agentic Tooling** — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
+- [ ] **Agentic Codebase** — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
+- [x] **Compound Engineering** — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
 
 ### 00 — Fundamentals
 - [x] SQL window functions deep dive

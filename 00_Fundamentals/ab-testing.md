@@ -1,7 +1,7 @@
 # A/B Testing: Concepts, Statistics & DE Implementation
-**Source:** YouTube — 课代表立正 (Cornell PhD, ex-Amazon/Meta/Tencent, Statsig early member)
-- Video 1: AB Testing概览 (7 min overview)
-- Video 2: AB实验，有哪些重要却不为人知的知识？(28 min deep dive)
+**Source:** YouTube (Cornell PhD, ex-Amazon/Meta/Tencent, Statsig early member)
+- Video 1: AB Testing Overview (7 min)
+- Video 2: AB Testing — Important but lesser-known concepts (28 min deep dive)
 
 ---
 
@@ -28,13 +28,13 @@ The true value of A/B testing is NOT confirming your good ideas work. It's disco
 
 ### 100% Experiment Coverage via Feature Gates
 Top companies (Meta, Statsig customers like OpenAI/Notion/Figma) achieve 100% experiment coverage by combining:
-- **Feature Gate** (功能开关) — a toggle that controls which users see a feature
+- **Feature Gate** — a toggle that controls which users see a feature
 - **Experiment system** — assigns users to variants and logs exposure
 
 Every new feature ships behind a Feature Gate → experiments become the **default**, not a separate project. The marginal cost of running an experiment approaches zero.
 
 ### Engineering Culture & Agency
-A mature experiment system gives engineers real **agency** (自主权):
+A mature experiment system gives engineers real **agency** (autonomy):
 - Engineers propose and validate ideas with data, not politics
 - Decisions are made by evidence, not by who argues loudest
 - Builds a culture of **intellectual honesty** — you have to face the data even when it contradicts your beliefs
@@ -233,7 +233,7 @@ The problem operates on two levels:
 For most teams: **yes**. Daily dashboards make peeking structural, not just personal — the temptation to act on what you see is nearly impossible to resist.
 
 #### How Sequential Testing Works
-Sequential testing (序贯检验) systematically accounts for repeated looks at the data by **raising the bar for significance early and lowering it as more data accumulates**. Every peek "spends" some of your α budget — early peeks cost more because you have less data and more uncertainty.
+Sequential testing systematically accounts for repeated looks at the data by **raising the bar for significance early and lowering it as more data accumulates**. Every peek "spends" some of your α budget — early peeks cost more because you have less data and more uncertainty.
 
 ```
 High significance threshold (hard to reach)
