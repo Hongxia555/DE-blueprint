@@ -27,6 +27,9 @@
 - [x] **Agentic Tooling** — building and exposing tools (MCP servers, function calling, skills) that agents can use to take real actions
 - [ ] **Agentic Codebase** — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
 - [x] **Compound Engineering** — orchestrating multiple agents, models, and tools in coordinated workflows to solve complex, multi-step tasks
+- [ ] **Agentic Memory — Unified Cross-Harness** — decoupling memory from any single AI tool (Claude Code, Cursor, Codex) using lifecycle hooks; three-layer architecture: hooks (deterministic logging) → dream phase (offline distillation into semantic markdown) → injection (context retrieval at session start)
+- [ ] **Agentic Memory — Five Memory Types** — context-resident compression, retrieval-augmented stores, reflective self-improvement, hierarchical virtual context, policy-learned management (store/retrieve/update/summarize/discard as agent-callable tools)
+- [ ] **Memory as Production Engineering** — benchmarking agent memory, measuring accuracy gains from accumulated context (2.5% → 50%+ on enterprise data tasks), and operational patterns for memory lifecycle management
 
 ### 00 — Fundamentals
 - [x] SQL window functions deep dive
