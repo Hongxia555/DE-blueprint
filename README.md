@@ -22,6 +22,7 @@
 ## Topics to Explore
 
 ### 03 — AI Augmentation
+- [x] **Graph Infrastructure for Agents** — Neo4j/property graph as agent substrate: decision traces, graph-layer memory, turn logging, eval layers on reasoning steps, multi-agent orchestration via shared graph
 - [ ] **Context Engineering** — how to design, structure, and manage context fed to LLMs for reliable, high-quality outputs
 - [ ] **Agentic Validation** — techniques for verifying agent outputs, preventing hallucinations, and building trust layers in agentic pipelines
 - [ ] **Agentic Codebase** — structuring a codebase so AI agents can navigate, understand, and modify it safely (CLAUDE.md, subagents, knowledge base)
@@ -30,7 +31,8 @@
 - [ ] **Memory as Production Engineering** — benchmarking agent memory, measuring accuracy gains from accumulated context (2.5% → 50%+ on enterprise data tasks), and operational patterns for memory lifecycle management
 
 ### 00 — Fundamentals
-- [ ] (nothing remaining)
+- [ ] **Python Threading** — daemon threads vs non-daemon, `thread.join()`, `ThreadPoolExecutor`; why `daemon=True` causes partial writes and how to fix it
+- [ ] **Python Code Review / OOP Maintainability** — four categories: Readability (type hints, no magic strings/indices), Structure (SRP, single responsibility), Reliability (input validation, custom exceptions), Testability (injectable dependencies); raw tuple vs `@dataclass` / `NamedTuple`
 
 ### 01 — Data Modeling
 - [ ] Star schema vs Data Vault trade-offs
@@ -42,10 +44,12 @@
 
 ### 04 — Infrastructure
 - [ ] Airflow vs Dagster vs Prefect comparison
+- [ ] **Kafka + S3 Hybrid Pipeline** — why the same event arrives through both channels (real-time vs historical); S3 as common landing zone; deduplication via Delta merge (`whenNotMatchedInsertAll`) instead of append; reprocessing patterns
 
 ### 05 — Pipeline Design
 - [ ] CDC (Change Data Capture) strategies
-- [ ] Schema evolution handling
+- [ ] **Schema enforcement vs evolution in Medallion** — `mergeSchema=false` at Bronze (fail loudly on drift), `mergeSchema=true` at Silver (controlled evolution); detecting schema changes via Delta history
+- [ ] **PySpark JSON schema inference** — `F.from_json()`, `F.schema_of_json()`, inferring schema from sample rows, flattening nested structs, excluding null fields for downstream processing
 
 ### 06 — Data Quality & Ops
 - [ ] dbt test coverage strategy
@@ -83,6 +87,7 @@ de-blueprint/
 ├── 03_AI_Augmentation/
 │   ├── ai-agents-fundamentals.md
 │   ├── ai-agents-management.md
+│   ├── graph-infrastructure-for-agents.md  ← Neo4j graph as agent substrate: traces, memory, eval, orchestration
 │   ├── llm-how-it-works.md
 │   ├── llm-model-comparison.md
 │   └── claude-tips/
