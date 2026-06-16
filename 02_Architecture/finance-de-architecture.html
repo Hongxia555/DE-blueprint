@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DE for Finance — Full Stack Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Kalam', cursive;
+      margin: 0; padding: 30px;
+      background: #f8f7f4;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 4px;
+      box-shadow: 2px 3px 12px rgba(0,0,0,0.10);
+      display: inline-block;
+    }
+    svg text { font-family: 'Kalam', cursive; }
+  </style>
+</head>
+<body>
+<div class="container">
+<svg width="1390" height="1430" viewBox="0 0 1390 1430">
+
+  <!-- ═══════════════════════════════ TITLE ═══════════════════════════════ -->
+  <text x="765" y="36" text-anchor="middle" font-size="26" font-weight="700" fill="#111827">DE for Finance — Full Stack Architecture</text>
+
+  <!-- ═══════════════════════════ AIRFLOW SIDEBAR ═══════════════════════════ -->
+  <rect x="10" y="400" width="155" height="790" rx="6"
+        fill="#FAFAFA" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="7,4"/>
+  <text x="87" y="430" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">Airflow</text>
+  <text x="87" y="450" text-anchor="middle" font-size="14" fill="#4B5563">orchestrates</text>
+  <text x="87" y="468" text-anchor="middle" font-size="14" fill="#4B5563">all layers</text>
+  <line x1="30" y1="480" x2="150" y2="480" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="87" y="500" text-anchor="middle" font-size="13" fill="#6B7280">DAG order:</text>
+  <text x="87" y="520" text-anchor="middle" font-size="13" fill="#6B7280">bronze_load</text>
+  <text x="87" y="538" text-anchor="middle" font-size="13" fill="#6B7280">freshness_check</text>
+  <text x="87" y="556" text-anchor="middle" font-size="13" fill="#6B7280">dbt_silver</text>
+  <text x="87" y="574" text-anchor="middle" font-size="13" fill="#6B7280">dbt_gold</text>
+  <text x="87" y="592" text-anchor="middle" font-size="13" fill="#6B7280">gl_recon</text>
+  <text x="87" y="610" text-anchor="middle" font-size="13" fill="#6B7280">promote_gold</text>
+  <text x="87" y="628" text-anchor="middle" font-size="13" fill="#6B7280">notify_slack</text>
+  <line x1="30" y1="640" x2="150" y2="640" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="87" y="660" text-anchor="middle" font-size="13" fill="#9CA3AF">on failure:</text>
+  <text x="87" y="678" text-anchor="middle" font-size="13" fill="#DC2626">⚠ Slack alert</text>
+  <text x="87" y="696" text-anchor="middle" font-size="13" fill="#DC2626">Gold halted</text>
+
+  <!-- ═══════════════════════════ SOURCE SYSTEMS ═══════════════════════════ -->
+  <rect x="180" y="58" width="262" height="100" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="311" y="85" text-anchor="middle" font-size="18" font-weight="700" fill="#1E3A8A">ERP / SAP</text>
+  <text x="311" y="105" text-anchor="middle" font-size="14" fill="#1E40AF">GL · AR · AP · Fixed Assets</text>
+  <text x="311" y="123" text-anchor="middle" font-size="14" fill="#1E40AF">Cost Centers · Deferred Rev</text>
+  <text x="311" y="141" text-anchor="middle" font-size="13" fill="#3B82F6">Intercompany · Entity structure</text>
+
+  <rect x="472" y="58" width="262" height="100" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="603" y="85" text-anchor="middle" font-size="18" font-weight="700" fill="#1E3A8A">Salesforce CRM</text>
+  <text x="603" y="105" text-anchor="middle" font-size="14" fill="#1E40AF">Accounts · Opportunities</text>
+  <text x="603" y="123" text-anchor="middle" font-size="14" fill="#1E40AF">Contracts · Products</text>
+  <text x="603" y="141" text-anchor="middle" font-size="13" fill="#3B82F6">Quotes · Activities</text>
+
+  <rect x="764" y="58" width="262" height="100" rx="8" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+  <text x="895" y="85" text-anchor="middle" font-size="18" font-weight="700" fill="#4C1D95">Salesforce Billing API</text>
+  <text x="895" y="105" text-anchor="middle" font-size="14" fill="#5B21B6">Orders · Invoices · Payments</text>
+  <text x="895" y="123" text-anchor="middle" font-size="14" fill="#5B21B6">Subscriptions · Tax Lines</text>
+  <text x="895" y="141" text-anchor="middle" font-size="13" fill="#7C3AED">Revenue Schedules · Credit Memos</text>
+
+  <rect x="1056" y="58" width="262" height="100" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="1187" y="85" text-anchor="middle" font-size="18" font-weight="700" fill="#1E3A8A">FX Rate Service</text>
+  <text x="1187" y="105" text-anchor="middle" font-size="14" fill="#1E40AF">Spot · Daily Close</text>
+  <text x="1187" y="123" text-anchor="middle" font-size="14" fill="#1E40AF">Avg Monthly · Historical</text>
+  <text x="1187" y="141" text-anchor="middle" font-size="13" fill="#3B82F6">Bloomberg / Reuters</text>
+
+  <!-- Phase 1: Sources → S3/Kafka (dashed lines + static arrowheads) -->
+  <path id="path-a1" d="M 311,159 L 311,192" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="306,184 316,184 311,192" fill="#374151"/>
+  <path id="path-a2" d="M 603,159 L 603,192" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="598,184 608,184 603,192" fill="#374151"/>
+  <path id="path-a3" d="M 895,159 L 895,192" stroke="#7C3AED" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="890,184 900,184 895,192" fill="#7C3AED"/>
+  <path id="path-a4" d="M 1187,159 L 1187,192" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="1182,184 1192,184 1187,192" fill="#374151"/>
+
+  <text x="318" y="178" text-anchor="start" font-size="13" fill="#6B7280">batch</text>
+  <text x="610" y="178" text-anchor="start" font-size="13" fill="#6B7280">batch</text>
+  <text x="902" y="178" text-anchor="start" font-size="13" fill="#7C3AED">stream</text>
+  <text x="1194" y="178" text-anchor="start" font-size="13" fill="#6B7280">batch</text>
+
+  <!-- ═══════════════════════════ S3 / KAFKA ROW ═══════════════════════════ -->
+  <rect x="206" y="193" width="210" height="52" rx="6" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="311" y="213" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">S3</text>
+  <text x="311" y="233" text-anchor="middle" font-size="13" fill="#6B7280">nightly batch export</text>
+
+  <rect x="498" y="193" width="210" height="52" rx="6" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="603" y="213" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">S3</text>
+  <text x="603" y="233" text-anchor="middle" font-size="13" fill="#6B7280">nightly batch export</text>
+
+  <rect x="790" y="193" width="210" height="52" rx="6" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="895" y="213" text-anchor="middle" font-size="16" font-weight="700" fill="#4C1D95">Kafka</text>
+  <text x="895" y="233" text-anchor="middle" font-size="13" fill="#7C3AED">real-time event stream</text>
+
+  <rect x="1082" y="193" width="210" height="52" rx="6" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="1187" y="213" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">S3</text>
+  <text x="1187" y="233" text-anchor="middle" font-size="13" fill="#6B7280">daily rate file</text>
+
+  <!-- Phase 2: S3/Kafka → SnowPipe/Spark -->
+  <path id="path-b1" d="M 311,246 L 311,282" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="306,274 316,274 311,282" fill="#374151"/>
+  <path id="path-b2" d="M 603,246 L 603,282" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="598,274 608,274 603,282" fill="#374151"/>
+  <path id="path-b3" d="M 895,246 L 895,282" stroke="#7C3AED" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="890,274 900,274 895,282" fill="#7C3AED"/>
+  <path id="path-b4" d="M 1187,246 L 1187,282" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="1182,274 1192,274 1187,282" fill="#374151"/>
+
+  <!-- ═══════════════════════ SNOWPIPE / SPARK ROW ═══════════════════════ -->
+  <rect x="206" y="283" width="210" height="52" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="311" y="303" text-anchor="middle" font-size="16" font-weight="700" fill="#1E40AF">SnowPipe</text>
+  <text x="311" y="323" text-anchor="middle" font-size="13" fill="#3B82F6">SQS trigger</text>
+
+  <rect x="498" y="283" width="210" height="52" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="603" y="303" text-anchor="middle" font-size="16" font-weight="700" fill="#1E40AF">SnowPipe</text>
+  <text x="603" y="323" text-anchor="middle" font-size="13" fill="#3B82F6">SQS trigger</text>
+
+  <rect x="790" y="283" width="210" height="52" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="895" y="301" text-anchor="middle" font-size="14" font-weight="700" fill="#92400E">Spark Structured Streaming</text>
+  <text x="895" y="323" text-anchor="middle" font-size="13" fill="#D97706">checkpoint · idempotent writes</text>
+
+  <rect x="1082" y="283" width="210" height="52" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="1187" y="303" text-anchor="middle" font-size="16" font-weight="700" fill="#1E40AF">SnowPipe</text>
+  <text x="1187" y="323" text-anchor="middle" font-size="13" fill="#3B82F6">SQS trigger</text>
+
+  <!-- Phase 3: SnowPipe/Spark → Bronze -->
+  <path id="path-c1" d="M 311,336 L 311,397" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="306,389 316,389 311,397" fill="#374151"/>
+  <path id="path-c2" d="M 603,336 L 603,397" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="598,389 608,389 603,397" fill="#374151"/>
+  <path id="path-c3" d="M 895,336 L 895,397" stroke="#D97706" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="890,389 900,389 895,397" fill="#D97706"/>
+  <path id="path-c4" d="M 1187,336 L 1187,397" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="1182,389 1192,389 1187,397" fill="#374151"/>
+
+  <!-- ═══════════════════════════════ BRONZE ══════════════════════════════ -->
+  <rect x="180" y="398" width="1138" height="112" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="749" y="425" text-anchor="middle" font-size="20" font-weight="700" fill="#92400E">BRONZE  (Snowflake)</text>
+  <text x="749" y="447" text-anchor="middle" font-size="15" fill="#374151">All-VARCHAR · Append-only · Full history preserved</text>
+  <text x="749" y="465" text-anchor="middle" font-size="15" fill="#374151">ON_ERROR = ABORT (financial)  /  CONTINUE (reference)</text>
+  <text x="749" y="483" text-anchor="middle" font-size="15" fill="#374151">Freshness check: MAX(source_ts) + row count after every load</text>
+  <text x="749" y="500" text-anchor="middle" font-size="13" fill="#D97706">→ halt pipeline and Slack alert if stale or count drops &gt;20%</text>
+  <text x="749" y="536" text-anchor="middle" font-size="14" fill="#6B7280">Airflow sensor ✓  →  dbt staging models</text>
+
+  <!-- Phase 4: Bronze → Silver -->
+  <path id="path-d1" d="M 749,511 L 749,532" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="744,524 754,524 749,532" fill="#9CA3AF"/>
+
+  <!-- ═══════════════════════════════ SILVER ══════════════════════════════ -->
+  <rect x="180" y="543" width="1138" height="112" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="2"/>
+  <text x="749" y="570" text-anchor="middle" font-size="20" font-weight="700" fill="#111827">SILVER  (Snowflake)</text>
+  <text x="749" y="592" text-anchor="middle" font-size="15" fill="#374151">Typed · Cleaned · Deduped · Idempotent MERGE on surrogate key</text>
+  <text x="749" y="610" text-anchor="middle" font-size="15" fill="#374151">Bad rows → quarantine table + Slack alert</text>
+  <text x="749" y="628" text-anchor="middle" font-size="15" fill="#374151">dbt snapshots — SCD Type 2 for slowly-changing dims (cost center, entity, FX)</text>
+  <text x="749" y="645" text-anchor="middle" font-size="13" fill="#6B7280">Safe to re-run · never double-counts · audit trail on every row</text>
+  <text x="749" y="678" text-anchor="middle" font-size="14" fill="#6B7280">dbt mart models</text>
+
+  <!-- Phase 5: Silver → Gold -->
+  <path id="path-e1" d="M 749,656 L 749,674" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="744,666 754,666 749,674" fill="#9CA3AF"/>
+
+  <!-- ═══════════════════════════════ GOLD ═══════════════════════════════ -->
+  <rect x="180" y="683" width="1138" height="130" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="2"/>
+  <text x="749" y="710" text-anchor="middle" font-size="20" font-weight="700" fill="#78350F">GOLD  (Snowflake)</text>
+  <text x="749" y="732" text-anchor="middle" font-size="15" fill="#374151">Star schema · Reconciled to ERP GL · Atomic promotion via ALTER TABLE SWAP</text>
+  <text x="749" y="752" text-anchor="middle" font-size="15" fill="#374151">fct_revenue_daily  ·  fct_deferred_revenue  ·  fct_gl_entries  ·  fct_ar_aging</text>
+  <text x="749" y="772" text-anchor="middle" font-size="15" fill="#374151">dim_entity  ·  dim_cost_center  ·  dim_fx_rate (SCD Type 2)</text>
+  <text x="749" y="790" text-anchor="middle" font-size="13" fill="#B45309">Finance queries here · never sees partial load · Finance sees old or new, never in-between</text>
+
+  <text x="570" y="848" text-anchor="middle" font-size="14" fill="#059669">push actuals to Anaplan</text>
+  <text x="570" y="864" text-anchor="middle" font-size="14" fill="#059669">(revenue, costs, headcount)</text>
+  <text x="930" y="848" text-anchor="middle" font-size="14" fill="#059669">pull budget / forecast</text>
+  <text x="930" y="864" text-anchor="middle" font-size="14" fill="#059669">Anaplan → Bronze → Silver → Gold</text>
+  <text x="207" y="828" text-anchor="start" font-size="12" fill="#9CA3AF">recon check</text>
+
+  <!-- Phase 6: Gold ↔ Anaplan -->
+  <path id="path-f1" d="M 724,814 L 724,892" stroke="#059669" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="719,884 729,884 724,892" fill="#059669"/>
+  <path id="path-f2" d="M 774,892 L 774,814" stroke="#059669" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="769,822 779,822 774,814" fill="#059669"/>
+
+  <!-- Phase 7: Recon bypass dashed line (long vertical) -->
+  <path id="path-g1" d="M 200 814 L 200 1072"
+        stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-dasharray="5,4"/>
+  <polygon points="195,1064 205,1064 200,1072" fill="#9CA3AF"/>
+
+  <!-- ═══════════════════════════════ ANAPLAN ══════════════════════════════ -->
+  <rect x="424" y="893" width="650" height="108" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="2"/>
+  <text x="749" y="921" text-anchor="middle" font-size="20" font-weight="700" fill="#064E3B">ANAPLAN  (Connected Planning)</text>
+  <text x="749" y="943" text-anchor="middle" font-size="15" fill="#374151">Receives actuals from Gold · FP&amp;A builds driver-based forecasts here</text>
+  <text x="749" y="963" text-anchor="middle" font-size="15" fill="#374151">Exports → Bronze: Budget · Forecast · Headcount · CapEx · Scenarios</text>
+  <text x="749" y="981" text-anchor="middle" font-size="13" fill="#059669">Variance analysis = Actuals (Gold) vs Budget/Forecast (Anaplan) in same place</text>
+
+  <!-- ═══════════════════════════ RECON JOBS ═══════════════════════════ -->
+  <rect x="180" y="1073" width="1138" height="108" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+  <text x="749" y="1100" text-anchor="middle" font-size="20" font-weight="700" fill="#7F1D1D">RECON JOBS  (after every Gold load)</text>
+  <text x="749" y="1122" text-anchor="middle" font-size="15" fill="#374151">GL recon  ·  AR recon  ·  Deferred recon  ·  Anaplan recon  ·  Source recon</text>
+  <text x="749" y="1143" text-anchor="middle" font-size="15" fill="#374151">✅ Pass → promote Gold, Tableau refreshes</text>
+  <text x="749" y="1162" text-anchor="middle" font-size="15" fill="#DC2626">❌ Fail → Slack alert, Gold NOT promoted, staleness banner shown</text>
+
+  <!-- Phase 8: Recon → Consumers -->
+  <path id="path-h1" d="M 291,1182 L 291,1218" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="286,1210 296,1210 291,1218" fill="#374151"/>
+  <path id="path-h2" d="M 519,1182 L 519,1218" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="514,1210 524,1210 519,1218" fill="#374151"/>
+  <path id="path-h3" d="M 749,1182 L 749,1218" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="744,1210 754,1210 749,1218" fill="#374151"/>
+  <path id="path-h4" d="M 979,1182 L 979,1218" stroke="#374151" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="974,1210 984,1210 979,1218" fill="#374151"/>
+  <path id="path-h5" d="M 1209,1182 L 1209,1218" stroke="#7C3AED" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="1204,1210 1214,1210 1209,1218" fill="#7C3AED"/>
+
+  <!-- ═════════════════════════ DOWNSTREAM CONSUMERS ════════════════════════ -->
+  <rect x="180" y="1219" width="222" height="118" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+  <text x="291" y="1244" text-anchor="middle" font-size="16" font-weight="700" fill="#064E3B">FP&amp;A / Anaplan</text>
+  <text x="291" y="1264" text-anchor="middle" font-size="14" fill="#374151">Variance analysis</text>
+  <text x="291" y="1282" text-anchor="middle" font-size="14" fill="#374151">Scenario planning</text>
+  <text x="291" y="1300" text-anchor="middle" font-size="14" fill="#374151">Rolling forecast</text>
+  <text x="291" y="1318" text-anchor="middle" font-size="13" fill="#059669">Budget vs Actuals</text>
+
+  <rect x="408" y="1219" width="222" height="118" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="519" y="1244" text-anchor="middle" font-size="16" font-weight="700" fill="#1E3A8A">Tableau / BI</text>
+  <text x="519" y="1264" text-anchor="middle" font-size="14" fill="#374151">Revenue dashboard</text>
+  <text x="519" y="1282" text-anchor="middle" font-size="14" fill="#374151">Deferred rev waterfall</text>
+  <text x="519" y="1300" text-anchor="middle" font-size="14" fill="#374151">AR aging</text>
+  <text x="519" y="1318" text-anchor="middle" font-size="13" fill="#3B82F6">Self-serve Finance</text>
+
+  <rect x="638" y="1219" width="222" height="118" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="749" y="1244" text-anchor="middle" font-size="16" font-weight="700" fill="#1E3A8A">Month-end Close</text>
+  <text x="749" y="1264" text-anchor="middle" font-size="14" fill="#374151">GL reconciliation</text>
+  <text x="749" y="1282" text-anchor="middle" font-size="14" fill="#374151">Trial balance</text>
+  <text x="749" y="1300" text-anchor="middle" font-size="14" fill="#374151">Close snapshot (immutable)</text>
+  <text x="749" y="1318" text-anchor="middle" font-size="13" fill="#3B82F6">Freeze on last day of month</text>
+
+  <rect x="868" y="1219" width="222" height="118" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="979" y="1244" text-anchor="middle" font-size="16" font-weight="700" fill="#1E3A8A">Audit / SOX</text>
+  <text x="979" y="1264" text-anchor="middle" font-size="14" fill="#374151">Data lineage</text>
+  <text x="979" y="1282" text-anchor="middle" font-size="14" fill="#374151">Access controls</text>
+  <text x="979" y="1300" text-anchor="middle" font-size="14" fill="#374151">Audit trail logs</text>
+  <text x="979" y="1318" text-anchor="middle" font-size="13" fill="#3B82F6">_loaded_at · _source_file</text>
+
+  <rect x="1098" y="1219" width="222" height="118" rx="8" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="1209" y="1244" text-anchor="middle" font-size="16" font-weight="700" fill="#4C1D95">AI Agent</text>
+  <text x="1209" y="1264" text-anchor="middle" font-size="14" fill="#374151">NL Finance Q&amp;A</text>
+  <text x="1209" y="1282" text-anchor="middle" font-size="14" fill="#374151">Variance anomalies</text>
+  <text x="1209" y="1300" text-anchor="middle" font-size="14" fill="#374151">Deferred rev explain</text>
+  <text x="1209" y="1318" text-anchor="middle" font-size="13" fill="#7C3AED">Semantic layer on Gold</text>
+
+  <!-- ═══════════════════════════════ FOOTER ══════════════════════════════ -->
+  <text x="649" y="1386" text-anchor="middle" font-size="14" fill="#9CA3AF">
+    Airflow orchestrates all layers  ·  DQ alerts to Slack  ·  Daily recon vs. ERP GL  ·  Gold never promoted without passing recon
+  </text>
+  <text x="1320" y="1386" text-anchor="middle" font-size="16" font-weight="700">
+    <tspan fill="#C9A84B">Data</tspan><tspan fill="#52B788">Strata</tspan>
+  </text>
+
+  <!-- Dot layer — circles appended here by JS -->
+  <g id="dot-layer"></g>
+
+</svg>
+</div>
+
+<script>
+  // [pathId, color, dotDurationMs, delayMs]
+  // Fires in pipeline order: Sources → S3/Kafka → SnowPipe/Spark → Bronze → Silver → Gold → Anaplan → Recon → Consumers
+  const SEQUENCE = [
+    ['a1', '#374151', 340,  400],
+    ['a2', '#374151', 340,  550],
+    ['a3', '#7C3AED', 340,  650],
+    ['a4', '#374151', 340,  700],
+    ['b1', '#374151', 360, 1100],
+    ['b2', '#374151', 360, 1250],
+    ['b3', '#7C3AED', 360, 1350],
+    ['b4', '#374151', 360, 1400],
+    ['c1', '#374151', 480, 1800],
+    ['c2', '#374151', 480, 1950],
+    ['c3', '#D97706', 480, 2100],
+    ['c4', '#374151', 480, 2200],
+    ['d1', '#9CA3AF', 300, 2900],
+    ['e1', '#9CA3AF', 280, 3500],
+    ['f1', '#059669', 580, 4200],
+    ['f2', '#059669', 580, 4600],
+    ['g1', '#9CA3AF', 900, 5000],
+    ['g1', '#9CA3AF', 900, 5450],
+    ['g1', '#9CA3AF', 900, 5900],
+    ['h1', '#374151', 360, 6300],
+    ['h2', '#374151', 360, 6450],
+    ['h3', '#374151', 360, 6600],
+    ['h4', '#374151', 360, 6750],
+    ['h5', '#7C3AED', 360, 6900],
+  ];
+
+  const LOOP_MS = 10000;
+
+  function animateDot(pathId, color, durationMs, startDelay) {
+    setTimeout(() => {
+      const path = document.getElementById('path-' + pathId);
+      if (!path) return;
+      const dotLayer = document.getElementById('dot-layer');
+      const totalLength = path.getTotalLength();
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('r', '5');
+      circle.setAttribute('fill', color);
+      circle.setAttribute('stroke', 'white');
+      circle.setAttribute('stroke-width', '1.5');
+      dotLayer.appendChild(circle);
+
+      const startTime = performance.now();
+
+      function step(now) {
+        const t = Math.min((now - startTime) / durationMs, 1);
+        const pt = path.getPointAtLength(t * totalLength);
+        circle.setAttribute('cx', pt.x);
+        circle.setAttribute('cy', pt.y);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          circle.remove();
+        }
+      }
+      requestAnimationFrame(step);
+    }, startDelay);
+  }
+
+  function runAnimation() {
+    SEQUENCE.forEach(([pathId, color, dur, delay]) => {
+      animateDot(pathId, color, dur, delay);
+    });
+    setTimeout(runAnimation, LOOP_MS);
+  }
+
+  document.fonts.ready.then(() => setTimeout(runAnimation, 400));
+</script>
+</body>
+</html>
