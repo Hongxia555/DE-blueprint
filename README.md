@@ -35,6 +35,7 @@
 - [ ] **Python Code Review / OOP Maintainability** — four categories: Readability (type hints, no magic strings/indices), Structure (SRP, single responsibility), Reliability (input validation, custom exceptions), Testability (injectable dependencies); raw tuple vs `@dataclass` / `NamedTuple`
 
 ### 01 — Data Modeling
+- [x] **DDL Design** — grain and primary key first; type decisions (decimal vs float, timestamps, semi-structured traps); partitioning vs clustering/sort keys; MPP projections (sort order + segmentation) vs Iceberg hidden partitioning and partition evolution; CoW vs MoR vs partition overwrite; schema evolution compatibility and semantic drift; schema-as-code
 - [ ] Star schema vs Data Vault trade-offs
 - [ ] One Big Table (OBT) pattern and when to use it
 
@@ -47,6 +48,8 @@
 - [ ] **Kafka + S3 Hybrid Pipeline** — why the same event arrives through both channels (real-time vs historical); S3 as common landing zone; deduplication via Delta merge (`whenNotMatchedInsertAll`) instead of append; reprocessing patterns
 
 ### 05 — Pipeline Design
+- [x] **Incremental ETL Design** — profiling the source (change timestamp, mutability, hard deletes, lateness, clock trust) to derive the pattern; partition overwrite vs watermark+MERGE vs CDC vs rolling reprocess; idempotency and watermark failure modes
+- [x] **Backfill Design** — trigger types (bug fix vs upstream correction vs recovery); stateless parallel vs cumulative serial ordering; shadow-table swap, checkpoint ledger, parallel-run diff; verification and runbook template
 - [ ] CDC (Change Data Capture) strategies
 - [ ] **Schema enforcement vs evolution in Medallion** — `mergeSchema=false` at Bronze (fail loudly on drift), `mergeSchema=true` at Silver (controlled evolution); detecting schema changes via Delta history
 - [ ] **PySpark JSON schema inference** — `F.from_json()`, `F.schema_of_json()`, inferring schema from sample rows, flattening nested structs, excluding null fields for downstream processing
@@ -79,6 +82,7 @@ de-blueprint/
 ├── 01_Data_Modeling/
 │   ├── 00_data_modeling_overview.md
 │   ├── cumulative-dimensions.md
+│   ├── ddl-design.md                   ← grain, types, partitioning/sorting, CoW vs MoR, schema evolution
 │   ├── graph-modeling.md
 │   ├── scd-idempotency.md
 │   └── xfn-partner-needs.md
@@ -106,6 +110,8 @@ de-blueprint/
 │   │   ├── pyspark-overview.md         ← PySpark concepts, Delta Lake, transformations vs actions
 │   │   ├── pyspark-example-pipeline.md ← end-to-end Medallion pipeline with Pydantic + Delta
 │   │   └── pyspark-faq.md              ← PySpark Q&A reference
+│   ├── backfill-design.md              ← backfill triggers, ordering, isolation, verification, runbook
+│   ├── incremental-etl-design.md       ← source-driven incremental strategy, watermarks, idempotency, late data
 │   └── write-audit-publish.md
 ├── 06_Data_Quality_Ops/
 │   ├── data-contracts.md
